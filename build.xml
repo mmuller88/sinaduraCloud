@@ -1,0 +1,149 @@
+<?xml version="1.0"?>
+<project name="sinaduraCloud" basedir="." default="war">
+
+	<property name="appName" value="sinaduraCloud" />
+	<property name="webSourceDir" value="${basedir}/WebContent" />
+	<property name="src.home" value="${basedir}/src" />
+	<property name="src.test.home" value="${basedir}/test" />
+	<property name="war.lib" value="${webSourceDir}/WEB-INF/lib" />
+	<property name="war.jre6.lib" value="${basedir}/jre6-lib" />
+	<property name="war.lib.runtime" value="${basedir}/resources-ext/lib" />
+
+	<path id="war.jre6.lib.classpath">
+		<fileset dir="${war.jre6.lib}/WEB-INF/lib">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="${war.lib.runtime}">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+
+	<path id="war.lib.classpath">
+		<fileset dir="${war.lib}">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="${war.lib.runtime}">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+	
+	<target name="clean" description="Removes previous build">
+		<delete dir="${webSourceDir}/WEB-INF/classes" />
+		<delete dir="dist" />
+		<delete dir="build" />
+		<delete dir="${basedir}/target/test-classes" />
+	</target>
+
+	<target name="jre6.clean" description="Removes previous build">
+		<delete dir="${webSourceDir}/WEB-INF/classes" />
+		<delete dir="dist" />
+		<delete dir="build" />
+		<delete dir="${basedir}/target/test-classes" />
+		<delete dir="${basedir}/results/junit" />
+	</target>
+
+	<target name="compile" depends="clean">
+		<echo>${java.home}</echo>
+		<mkdir dir="${webSourceDir}/WEB-INF/classes" />
+		<javac srcdir="${src.home}" destdir="${webSourceDir}/WEB-INF/classes" classpathref="war.lib.classpath" source="1.5" target="1.5" />
+		<copy todir="${webSourceDir}/WEB-INF/classes">
+			<fileset dir="${src.home}">
+				<include name="**/*.properties" />
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="jre6.compile" depends="jre6.clean">
+		<echo>${java.home}</echo>
+		<mkdir dir="${webSourceDir}/WEB-INF/classes" />
+		<javac srcdir="${src.home}" destdir="${webSourceDir}/WEB-INF/classes" classpathref="war.jre6.lib.classpath" source="1.5" target="1.5" />
+		<copy todir="${webSourceDir}/WEB-INF/classes">
+			<fileset dir="${src.home}">
+				<include name="**/*.properties" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="compile-test" depends="compile">
+		<echo>${java.home}</echo>
+		<mkdir dir="${basedir}/target" />
+		<mkdir dir="${basedir}/target/test-classes" />
+		<javac srcdir="${src.test.home}" destdir="${basedir}/target/test-classes" classpathref="war.lib.classpath" source="1.5" target="1.5" >
+			<classpath>
+				<dirset dir="${webSourceDir}/WEB-INF/classes"/>
+			</classpath>
+		</javac>
+	</target>
+	
+	
+	<target name="test" depends="compile-test">
+		<mkdir dir="results/junit" />
+		<junit showoutput="true" printsummary="on" enabletestlistenerevents="true">
+			<formatter type="xml" />
+			<classpath>
+				<path refid="war.lib.classpath" />
+				<pathelement location="${webSourceDir}/WEB-INF/classes"/>
+				<pathelement location="${basedir}/target/test-classes"/>
+			</classpath>
+			<batchtest fork="false" haltonfailure="on" haltonerror="on" todir="results/junit">
+				<fileset dir="${src.test.home}" includes="**/AllTest.java" />
+			</batchtest>
+		</junit>
+	</target>
+
+	<target name="war" depends="compile">
+		<war destfile="${basedir}/${appName}.war" webxml="${webSourceDir}/WEB-INF/web.xml">
+			<fileset dir="${webSourceDir}">
+				<include name="**/*.*" />
+			</fileset>
+		</war>
+	</target>
+
+	<target name="jre6.war" depends="jre6.compile">
+		<war destfile="${basedir}/${appName}.war.jre6" webxml="${webSourceDir}/WEB-INF/web.xml">
+			<fileset dir="${war.jre6.lib}">
+				<include name="**/*.*" />
+			</fileset>
+			<fileset dir="${webSourceDir}">
+				<include name="**/*.*" />
+				<exclude name="**/*.jar" />
+			</fileset>
+		</war>
+	</target>
+
+	<target name="prepare-dependencies-classes" depends="compile">
+		<delete dir="build" />
+		<mkdir dir="build" />
+		<!--solo incluimos los VOs-->
+		<copy todir="build">
+			<fileset dir="${webSourceDir}/WEB-INF/classes">
+				<include name="net/zylk/sinadura/cloud/model/**" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="remote-deploy" depends="war">
+		<scp trust="true" file="${basedir}/${appName}.war" todir="${username}:${password}@${remote.deploy.host}:${tomcat.webapps.dir}" />
+	</target>
+	
+	
+	<property name="publish.release" value="false" />
+	<target name="publish.release.check">
+		<condition property="publish.release.control">
+			<and>
+				<contains string="${publish.release}" substring="true" />
+			</and>
+		</condition>
+	</target>
+
+	<tstamp>
+		<format property="subdirectory.timestamp" pattern="yyyyMMdd-HHmmss"/>
+	</tstamp>
+
+	<target name="publish-release" depends="publish.release.check" if="${publish.release.control}">
+		<echo>Publicando version en ${publish_release_dir}/${subdirectory.timestamp}</echo>
+		<mkdir dir="${publish_release_dir}/${subdirectory.timestamp}" />
+		<copy file="${basedir}/${appName}.war" todir="${publish_release_dir}/${subdirectory.timestamp}" overwrite="false" verbose="true"/>
+	</target>
+
+</project>

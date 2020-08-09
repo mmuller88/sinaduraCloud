@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app 
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns="http://java.sun.com/xml/ns/javaee"
+		xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+		id="WebApp_ID" 
+		version="2.5">
+	<display-name>sinadura-cloud-services</display-name>
+ 
+	<servlet>
+		<servlet-name>Jersey REST Service</servlet-name>
+		<servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+		<init-param>
+			<param-name>jersey.config.server.provider.packages</param-name>
+			<param-value>net.zylk.sinadura.cloud.rest</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	
+	<servlet>
+		<servlet-name>DaoCheckerServlet</servlet-name>
+		<servlet-class>net.zylk.sinadura.cloud.servlet.DaoCheckerServlet</servlet-class>
+	</servlet>
+	
+	<servlet>
+		<servlet-name>SignatureFileUploadServlet</servlet-name>
+		<servlet-class>net.zylk.sinadura.cloud.servlet.SignatureFileUploadServlet</servlet-class>
+	</servlet>
+
+	<!-- MAPPINGS ESPECIFICOS PARA EL UPLOAD DE FICHEROS MULTIPART -->
+	<!-- No siguen exactamente el mismo patron definido para los metodos de jax-rs, debido a las limitaciones de los mappings de los servlets -->
+	<servlet-mapping>
+		<servlet-name>SignatureFileUploadServlet</servlet-name>
+		<url-pattern>/rest/v1/transactions/signaturefile-upload/*</url-pattern>
+	</servlet-mapping>
+	
+	<!-- MAPPING REST GENERICO (jax-rs) -->
+	<servlet-mapping>
+		<servlet-name>Jersey REST Service</servlet-name>
+		<url-pattern>/rest/*</url-pattern>
+	</servlet-mapping>
+
+	<!-- MAPPINGS UTIL -->
+	<servlet-mapping>
+		<servlet-name>DaoCheckerServlet</servlet-name>
+		<url-pattern>/DaoCheckerServlet</url-pattern>
+	</servlet-mapping>
+	
+	<welcome-file-list>
+		<welcome-file>DaoCheckerServlet</welcome-file>
+	</welcome-file-list>
+
+</web-app>
